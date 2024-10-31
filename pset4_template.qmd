@@ -25,11 +25,142 @@ include-before-body:
 
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
+import packages
+```{python}
+import pandas as pd
+import numpy as np
+import altair as alt
+import os
+import json
+alt.renderers.enable("png") 
+import shapely
+import geopandas
+```
+
 1. 
+```{python}
+raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
+path_health16 = os.path.join(raw_health, "pos2016.csv")
+health16 = pd.read_csv(path_health16) 
+
+path_health17 = os.path.join(raw_health, "pos2017.csv")
+health17 = pd.read_csv(path_health17)
+
+path_health18 = os.path.join(raw_health, "pos2018.csv")
+health18 = pd.read_csv(path_health18, encoding = "ISO-8859-1")
+
+path_health19 = os.path.join(raw_health, "pos2019.csv")
+health19 = pd.read_csv(path_health19, encoding = "ISO-8859-1")
+```
+
+Attribution: I asked ChatGPT how to solve the unicode errors I 
+was encountering, and I was advised to try out different
+encodings, including "ISO-8859-1".
+
+Q1 Answer:
+```{python}
+variables_list = health16.columns
+
+print("These are the variables I selected: ", variables_list)
+```
+
+
 2. 
+Function for subsetting the datasets to short term hospitals
+```{python}
+def short_term(X):
+  Y = X[(X["PRVDR_CTGRY_SBTYP_CD"] == 1) & (X["PRVDR_CTGRY_CD"] == 1)]
+  return(Y)
+
+```
+
+Run function on health16
+```{python}
+short16 = short_term(health16)
+
+print("There are ", len(short16), " hospitals in this dataset")
+```
+
     a.
     b.
 3. 
+
+short term function on health17
+```{python}
+short17 = short_term(health17)
+
+```
+
+short term function on health18
+```{python}
+short18 = short_term(health18)
+
+```
+
+```{python}
+short19 = short_term(health19)
+
+```
+
+Appending the data together
+```{python}
+# add a "year" column to each dataset, for future disagg
+def add_column(X, the_year):
+  year_col = []
+  i = 0
+  while i < len(X):
+    year_col.append(the_year)
+    i += 1
+  X["Year"] = year_col
+  return(X)
+
+#run on each dataframe
+add_column(short16, 2016)
+
+add_column(short17, 2017)
+
+add_column(short18, 2018)
+
+add_column(short19, 2019)
+```
+
+Attribution: I asked my code why my len(X) and length of index
+values were not equal, and was advised to set i equal to 0 
+instead of 1. 
+
+Concat the dataframes together
+```{python}
+
+concat_1 = pd.concat([short16, short17], axis = 0)
+
+concat_2 = pd.concat([concat_1, short18], axis = 0)
+
+df_health = pd.concat([concat_2, short19], axis = 0)
+
+df_health.reset_index(drop = True)
+```
+
+Attribution: https://datacarpentry.org/python-ecology-lesson/05-merging-data.html 
+
+Code 
+```{python}
+def  one_dummy(C):
+  observation = []
+  i = 0
+  while 1 > 0 and i < C:
+    observation.append(1)
+    i += 1
+  return(observation)
+
+#add observation column to df
+df_health["Observation"] = one_dummy(len(df_health))
+
+
+```
+
+Attribution: modifying my own code from Pset 1
+
+
 4. 
     a.
     b.
