@@ -57,7 +57,7 @@ import geopandas
 
 1. 
 ```{python}
-raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
+raw_health = "/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
 path_health16 = os.path.join(raw_health, "pos2016.csv")
 health16 = pd.read_csv(path_health16) 
 
@@ -185,12 +185,35 @@ Attribution: modifying my own code from Pset 1
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
-1. 
-2. 
-3. 
-    a.
-    b.
-    c.
+1. Create a list of all hospitals that were active in 2016 that were suspected to have closed by 2019. Record the facility name and zip of each hospital as well as the year of suspected closure. How many hospitals fit in this definition?
+
+filter for hospitals that appear in 2016 as active (Termination code should be active provider) and then check if they disappear from the data
+
+so if termination code == 00, active provider
+if 01 then voluntary merger or closure, so maybe pull out datasets where code == 0 and set in four datasets by year then compare fac_nam? 
+
+use if/else loops, to fill a dataframe with hospitals active in 2016 but terminated either in 2017, 2018, or 2019 along with facility name, zip code, and year terminated
+
+```{python}
+#filter for a dataset of active hospitals in 2016
+active_2016 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2016)]
+
+active_2017 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2017)]
+
+active_2018 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2018)]
+
+active_2019 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2019)]
+
+```
+
+2. Sort this list of hospitals by name and report the names and year of suspected closure for the first 10 rows.
+
+
+3. Not all closures are true closures, remove any suspected closures that are zipcodes where the number does not decrease in the year after the suspected closure.
+
+    a. Among the suspected closures, how many hospitals fit this definition? After correcting, how many do you have left?
+
+    b. Sort this list of corrected hospital closures by name and report the first ten rows.
 
 ## Download Census zip code shapefile (10 pt) 
 
