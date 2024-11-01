@@ -255,18 +255,16 @@ Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataf
 
 1. Create a list of all hospitals that were active in 2016 that were suspected to have closed by 2019. Record the facility name and zip of each hospital as well as the year of suspected closure. How many hospitals fit in this definition?
 
-587 hospitals fit this definition, out of 29085 total hospitals.
+10,091 hospitals fit this definition, out of 29085 total hospitals.
 
 ```{python}
-active_2016 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2016)]
-
 def find_suspected_closures(active_2016, df_health):
     suspected_closures = pd.DataFrame(columns=['FAC_NAME', 'ZIP_CD', 'Year'])
     
     for index, row in active_2016.iterrows():
         FAC_NAME = row['FAC_NAME']
         ZIP_CD = row['ZIP_CD']
-
+        found = False  
         for Year in range(2017, 2020):
             closed_check = df_health[(df_health['FAC_NAME'] == FAC_NAME) & (df_health['Year'] == Year)]           
             if not closed_check.empty and closed_check['PGM_TRMNTN_CD'].values[0] != 0:
@@ -276,10 +274,20 @@ def find_suspected_closures(active_2016, df_health):
                     'Year': [Year]
                 })
                 suspected_closures = pd.concat([suspected_closures, new_entry], ignore_index=True)
+                found = True 
+
+        if not found:
+            for Year in range(2017, 2020):
+                new_entry = pd.DataFrame({
+                    'FAC_NAME': [FAC_NAME],
+                    'ZIP_CD': [ZIP_CD],
+                    'Year': [Year]
+                })
+                suspected_closures = pd.concat([suspected_closures, new_entry], ignore_index=True)
+
     return suspected_closures
 
 suspected_closures = find_suspected_closures(active_2016, df_health)
-
 print(len(suspected_closures))
 ```
 
@@ -294,20 +302,34 @@ print(suspected_closures[['FAC_NAME', 'Year']].sort_values(by='FAC_NAME').head(1
 
     a. Among the suspected closures, how many hospitals fit this definition? After correcting, how many do you have left?
 
+    Working with the definition given, we have 7 mergers/acquisitions.
+
 ```{python}
+import pandas as pd
+
 def find_filtered_closures(suspected_closures):
     filtered_closures = pd.DataFrame(columns=['FAC_NAME', 'ZIP_CD', 'Year'])
     counts = suspected_closures.groupby(['ZIP_CD', 'Year']).size().unstack(fill_value=0)
-    kept_zip_codes = []
- 
+    kept_zip_codes = set(counts.index)  # Start with all zip codes
+    
+
     for ZIP_CD in counts.index:
-        if counts.loc[ZIP_CD, 2017] > counts.loc[ZIP_CD, 2018] or \
-           counts.loc[ZIP_CD, 2018] > counts.loc[ZIP_CD, 2019]:
-            kept_zip_codes.append(ZIP_CD)
+        if 2016 in counts.columns and 2017 in counts.columns:
+            if counts.loc[ZIP_CD, 2016] == counts.loc[ZIP_CD, 2017]:
+                kept_zip_codes.discard(ZIP_CD)  
+
+        if 2017 in counts.columns and 2018 in counts.columns:
+            if counts.loc[ZIP_CD, 2017] == counts.loc[ZIP_CD, 2018]:
+                kept_zip_codes.discard(ZIP_CD)  
+
+        if 2018 in counts.columns and 2019 in counts.columns:
+            if counts.loc[ZIP_CD, 2018] == counts.loc[ZIP_CD, 2019]:
+                kept_zip_codes.discard(ZIP_CD)  
+
 
     for ZIP_CD in kept_zip_codes:
-        for Year in range(2017, 2020):
-            if ZIP_CD in counts.index and counts.loc[ZIP_CD, Year] > 0:
+        for Year in range(2016, 2020):
+            if ZIP_CD in counts.index and Year in counts.columns and counts.loc[ZIP_CD, Year] > 0:
                 fac_in_zip = suspected_closures[
                     (suspected_closures['ZIP_CD'] == ZIP_CD) & 
                     (suspected_closures['Year'] == Year)
@@ -323,22 +345,22 @@ def find_filtered_closures(suspected_closures):
 
     return filtered_closures
 
-
 filtered_closures = find_filtered_closures(suspected_closures)
-
-
-print(filtered_closures)
-
-num_mergers = len(filtered_closures)
-print(f"Number of suspected closures that may be mergers/acquisitions: {num_mergers}")
-
+print(len(filtered_closures))
 ```
 
+    b. How many hospitals do you have left?
+      Subtracting the mergers, we have 10084 hospitals left.
 
+```{python}
+print((len(suspected_closures) - len(filtered_closures)))
+```
 
-    b. Sort this list of corrected hospital closures by name and report the first ten rows.
+    c. Sort and report the first 10 rows.
 
-    c. 
+```{python}
+print(filtered_closures.sort_values(by='FAC_NAME').head(10))
+``` 
 
 ## Download Census zip code shapefile (10 pt) 
 
