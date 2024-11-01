@@ -148,18 +148,18 @@ instead of 1.
 
 Concat the dataframes together
 ```{python}
+concat_1 = pd.concat([short16, short17], axis = 0)
 
-concat_1 = pd.concat([short16, short17], axis = 0, ignore_index = True)
+concat_2 = pd.concat([concat_1, short18], axis = 0)
 
-concat_2 = pd.concat([concat_1, short18], axis = 0, ignore_index = True)
+df_health = pd.concat([concat_2, short19], axis = 0)
 
-df_health = pd.concat([concat_2, short19], axis = 0, ignore_index = True)
-
+df_health.reset_index(drop = True)
 ```
 
 Attribution: https://datacarpentry.org/python-ecology-lesson/05-merging-data.html 
 
-Adding an observation variable to the dataframe
+Code 
 ```{python}
 def  one_dummy(C):
   observation = []
@@ -172,82 +172,13 @@ def  one_dummy(C):
 #add observation column to df
 df_health["Observation"] = one_dummy(len(df_health))
 
+
 ```
 
 Attribution: modifying my own code from Pset 1
 
-Graph observations by year
-```{python}
-alt.data_transformers.enable("vegafusion")
 
-alt.Chart(df_health).mark_bar().encode(
-  alt.X("Year:N"),
-  alt.Y("sum(Observation)")
-)
-
-
-```
-
-4.
-
-```{python}
-# create a function to iterate through PRVDR_NUM 
-def unique_comp(column):
-  unique_box = []
-  for entry in column:
-    if entry not in unique_box:
-      unique_box.append(entry)
-    else:
-      pass
-  return(unique_box)
-
-#save list
-unique_list = unique_comp(df_health["PRVDR_NUM"])
-
-```
-
-Filter by year in order to make numbers for each year, save those numbers to a df
-```{python}
-# make series with the four years
-the_years = [2016, 2017, 2018, 2019]
-
-#2016
-unique_len_16 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2016]))
-
-#2017
-unique_len_17 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2017]))
-
-#2018
-unique_len_18 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2018]))
-
-#2019
-unique_len_19 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2019]))
-
-# make the lens into a list
-len_list = [unique_len_16, unique_len_17, unique_len_18, unique_len_19]
-
-#form into dataframe
-
-the_data = {
-  "Years": the_years,
-   "Unique_CMS": len_list 
-}
-
-df_CMS = pd.DataFrame(the_data)
-
-```
-
-Plot the graph
-```{python}
-alt.Chart(df_CMS).mark_bar().encode(
-  alt.X("Years:N"),
-  alt.Y("Unique_CMS")
-)
-
-
-```
-
-Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataframe/ 
+4. 
     a.
     b.
 
@@ -255,40 +186,95 @@ Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataf
 
 1. Create a list of all hospitals that were active in 2016 that were suspected to have closed by 2019. Record the facility name and zip of each hospital as well as the year of suspected closure. How many hospitals fit in this definition?
 
-filter for hospitals that appear in 2016 as active (Termination code should be active provider) and then check if they disappear from the data
-
-so if termination code == 00, active provider
-if 01 then voluntary merger or closure, so maybe pull out datasets where code == 0 and set in four datasets by year then compare fac_nam? 
-
-use if/else loops, to fill a dataframe with hospitals active in 2016 but terminated either in 2017, 2018, or 2019 along with facility name, zip code, and year terminated
+587 hospitals fit this definition, out of 29085 total hospitals.
 
 ```{python}
-#filter for a dataset of active hospitals in 2016
 active_2016 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2016)]
 
-active_2017 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2017)]
+def find_suspected_closures(active_2016, df_health):
+    suspected_closures = pd.DataFrame(columns=['FAC_NAME', 'ZIP_CD', 'Year'])
+    
+    for index, row in active_2016.iterrows():
+        FAC_NAME = row['FAC_NAME']
+        ZIP_CD = row['ZIP_CD']
 
-active_2018 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2018)]
+        for Year in range(2017, 2020):
+            closed_check = df_health[(df_health['FAC_NAME'] == FAC_NAME) & (df_health['Year'] == Year)]           
+            if not closed_check.empty and closed_check['PGM_TRMNTN_CD'].values[0] != 0:
+                new_entry = pd.DataFrame({
+                    'FAC_NAME': [FAC_NAME],
+                    'ZIP_CD': [ZIP_CD],
+                    'Year': [Year]
+                })
+                suspected_closures = pd.concat([suspected_closures, new_entry], ignore_index=True)
+    return suspected_closures
 
-active_2019 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2019)]
+suspected_closures = find_suspected_closures(active_2016, df_health)
 
+print(len(suspected_closures))
 ```
+
 
 2. Sort this list of hospitals by name and report the names and year of suspected closure for the first 10 rows.
 
+```{python}
+print(suspected_closures[['FAC_NAME', 'Year']].sort_values(by='FAC_NAME').head(10))
+```
 
 3. Not all closures are true closures, remove any suspected closures that are zipcodes where the number does not decrease in the year after the suspected closure.
 
     a. Among the suspected closures, how many hospitals fit this definition? After correcting, how many do you have left?
 
+```{python}
+def find_filtered_closures(suspected_closures):
+    filtered_closures = pd.DataFrame(columns=['FAC_NAME', 'ZIP_CD', 'Year'])
+    counts = suspected_closures.groupby(['ZIP_CD', 'Year']).size().unstack(fill_value=0)
+    kept_zip_codes = []
+ 
+    for ZIP_CD in counts.index:
+        if counts.loc[ZIP_CD, 2017] > counts.loc[ZIP_CD, 2018] or \
+           counts.loc[ZIP_CD, 2018] > counts.loc[ZIP_CD, 2019]:
+            kept_zip_codes.append(ZIP_CD)
+
+    for ZIP_CD in kept_zip_codes:
+        for Year in range(2017, 2020):
+            if ZIP_CD in counts.index and counts.loc[ZIP_CD, Year] > 0:
+                fac_in_zip = suspected_closures[
+                    (suspected_closures['ZIP_CD'] == ZIP_CD) & 
+                    (suspected_closures['Year'] == Year)
+                ]
+
+                for index, row in fac_in_zip.iterrows():
+                    new_entry = pd.DataFrame({
+                        'FAC_NAME': [row['FAC_NAME']],
+                        'ZIP_CD': [ZIP_CD],
+                        'Year': [Year]
+                    })
+                    filtered_closures = pd.concat([filtered_closures, new_entry], ignore_index=True)
+
+    return filtered_closures
+
+
+filtered_closures = find_filtered_closures(suspected_closures)
+
+
+print(filtered_closures)
+
+num_mergers = len(filtered_closures)
+print(f"Number of suspected closures that may be mergers/acquisitions: {num_mergers}")
+
+```
+
+
+
     b. Sort this list of corrected hospital closures by name and report the first ten rows.
+
+    c. 
 
 ## Download Census zip code shapefile (10 pt) 
 
 1. 
-    a. The five file types in this download are DBF files, PRJ files,
-     SHP files, SHX files, and xmlfile
-
+    a.
     b. 
 2. 
 
