@@ -258,6 +258,8 @@ Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataf
 10,091 hospitals fit this definition, out of 29085 total hospitals.
 
 ```{python}
+active_2016 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2016)]
+
 def find_suspected_closures(active_2016, df_health):
     suspected_closures = pd.DataFrame(columns=['FAC_NAME', 'ZIP_CD', 'Year'])
     
