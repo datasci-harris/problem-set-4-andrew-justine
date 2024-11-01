@@ -149,18 +149,17 @@ instead of 1.
 Concat the dataframes together
 ```{python}
 
-concat_1 = pd.concat([short16, short17], axis = 0)
+concat_1 = pd.concat([short16, short17], axis = 0, ignore_index = True)
 
-concat_2 = pd.concat([concat_1, short18], axis = 0)
+concat_2 = pd.concat([concat_1, short18], axis = 0, ignore_index = True)
 
-df_health = pd.concat([concat_2, short19], axis = 0)
+df_health = pd.concat([concat_2, short19], axis = 0, ignore_index = True)
 
-df_health.reset_index(drop = True)
 ```
 
 Attribution: https://datacarpentry.org/python-ecology-lesson/05-merging-data.html 
 
-Code 
+Adding an observation variable to the dataframe
 ```{python}
 def  one_dummy(C):
   observation = []
@@ -173,13 +172,82 @@ def  one_dummy(C):
 #add observation column to df
 df_health["Observation"] = one_dummy(len(df_health))
 
-
 ```
 
 Attribution: modifying my own code from Pset 1
 
+Graph observations by year
+```{python}
+alt.data_transformers.enable("vegafusion")
 
-4. 
+alt.Chart(df_health).mark_bar().encode(
+  alt.X("Year:N"),
+  alt.Y("sum(Observation)")
+)
+
+
+```
+
+4.
+
+```{python}
+# create a function to iterate through PRVDR_NUM 
+def unique_comp(column):
+  unique_box = []
+  for entry in column:
+    if entry not in unique_box:
+      unique_box.append(entry)
+    else:
+      pass
+  return(unique_box)
+
+#save list
+unique_list = unique_comp(df_health["PRVDR_NUM"])
+
+```
+
+Filter by year in order to make numbers for each year, save those numbers to a df
+```{python}
+# make series with the four years
+the_years = [2016, 2017, 2018, 2019]
+
+#2016
+unique_len_16 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2016]))
+
+#2017
+unique_len_17 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2017]))
+
+#2018
+unique_len_18 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2018]))
+
+#2019
+unique_len_19 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2019]))
+
+# make the lens into a list
+len_list = [unique_len_16, unique_len_17, unique_len_18, unique_len_19]
+
+#form into dataframe
+
+the_data = {
+  "Years": the_years,
+   "Unique_CMS": len_list 
+}
+
+df_CMS = pd.DataFrame(the_data)
+
+```
+
+Plot the graph
+```{python}
+alt.Chart(df_CMS).mark_bar().encode(
+  alt.X("Years:N"),
+  alt.Y("Unique_CMS")
+)
+
+
+```
+
+Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataframe/ 
     a.
     b.
 
@@ -218,7 +286,9 @@ active_2019 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] =
 ## Download Census zip code shapefile (10 pt) 
 
 1. 
-    a.
+    a. The five file types in this download are DBF files, PRJ files,
+     SHP files, SHX files, and xmlfile
+
     b. 
 2. 
 
