@@ -176,9 +176,78 @@ df_health["Observation"] = one_dummy(len(df_health))
 ```
 
 Attribution: modifying my own code from Pset 1
+Graph observations by year
+```{python}
+alt.data_transformers.enable("vegafusion")
+
+alt.Chart(df_health).mark_bar().encode(
+  alt.X("Year:N"),
+  alt.Y("sum(Observation)")
+)
 
 
-4. 
+```
+
+4.
+
+```{python}
+# create a function to iterate through PRVDR_NUM 
+def unique_comp(column):
+  unique_box = []
+  for entry in column:
+    if entry not in unique_box:
+      unique_box.append(entry)
+    else:
+      pass
+  return(unique_box)
+
+#save list
+unique_list = unique_comp(df_health["PRVDR_NUM"])
+
+```
+
+Filter by year in order to make numbers for each year, save those numbers to a df
+```{python}
+# make series with the four years
+the_years = [2016, 2017, 2018, 2019]
+
+#2016
+unique_len_16 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2016]))
+
+#2017
+unique_len_17 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2017]))
+
+#2018
+unique_len_18 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2018]))
+
+#2019
+unique_len_19 = len(unique_comp(df_health["PRVDR_NUM"][df_health["Year"] == 2019]))
+
+# make the lens into a list
+len_list = [unique_len_16, unique_len_17, unique_len_18, unique_len_19]
+
+#form into dataframe
+
+the_data = {
+  "Years": the_years,
+   "Unique_CMS": len_list 
+}
+
+df_CMS = pd.DataFrame(the_data)
+
+```
+
+Plot the graph
+```{python}
+alt.Chart(df_CMS).mark_bar().encode(
+  alt.X("Years:N"),
+  alt.Y("Unique_CMS")
+)
+
+
+```
+
+Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataframe/ 
     a.
     b.
 
