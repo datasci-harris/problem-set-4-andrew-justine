@@ -52,7 +52,7 @@ import os
 import json
 alt.renderers.enable("png") 
 import shapely
-import geopandas
+import geopandas as gpd
 ```
 
 1. 
@@ -262,12 +262,92 @@ Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataf
 
 ## Download Census zip code shapefile (10 pt) 
 
-1. 
-    a. The five file types in this download are DBF files, PRJ files,
-     SHP files, SHX files, and xmlfile
 
-    b. 
+
+1. 
+    a. The five file types in this download are .dbf files, .prj files,
+     .shp files, .shx files, and .xml file. .dbf Files have attribute information,
+     .shp files have feature geometrics, and .shx files contain a positional index,
+     while .prj files describe the Coordinate Reference System and .xml files 
+     are used to store data in hierarchical categories. 
+
+     Attribution: in-class lecture and https://blog.hubspot.com/website/what-is-xml-file 
+
+    b. In terms of uncompressed
+     sizes, the largest files are the .shp and .dbf files, at 817,915 and 6,275 KB, 
+     followed by the .shx and .xml files at 259 and 16 KB. Coming in last is the 
+     .prj file at 1 KB.
+
+
+
+
 2. 
+
+Read the data into GeoDataFrame
+```{python}
+#read the .shp file in
+the_path = "C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
+
+shape_data = gpd.read_file(the_path)
+
+```
+
+Attribution: https://automating-gis-processes.github.io/CSC/notebooks/L2/geopandas-basics.html 
+
+Restrict only to Texas zip codes
+```{python}
+
+#generate list of Texas zipcode leading numbers
+Tex_zip_list = np.linspace(start = 750, stop = 799, num = 50).astype(np.int32)
+#turn to list object
+Tex_zip_list = list(Tex_zip_list)
+
+#add Austin entry to Tex_zip_list
+Tex_zip_list.append(733)
+
+string_Tex_list = str(Tex_zip_list)
+```
+
+This function is used only for checking
+zipcodes
+```{python}
+#make a function to pull out the first 3 letters in the 
+#string for each entry 
+def string_puller(df):
+  #a receiver for the values
+  my_strings = []
+  #subset for the relevant column
+  A = df["ZCTA5"]
+  for i in A:
+    #select the first 3 characters in each zipcode
+    my_strings.append(i[0:3])
+  return(my_strings)
+```
+
+
+```{python}
+#create a binary variable for in or outside of Texas
+def in_Texas(df):
+  Texas = []
+  for i in df["ZCTA5"]:
+    #select the first 3 characters in each zipcode
+    if i[0:3] in string_Tex_list:
+      Texas.append(1)
+    else:
+      Texas.append(0)
+  df["in_Texas"] = Texas
+  return(df)
+    #if entry contains any of the str in the list, add a 1
+
+    #select first 3 digits of entry 
+    
+
+
+
+
+```
+
+Attribution: https://stackoverflow.com/questions/35928170/is-there-a-numpy-function-for-generating-sequences-similar-to-rs-seq-function 
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
