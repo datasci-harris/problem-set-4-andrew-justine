@@ -331,20 +331,17 @@ def in_Texas(df):
   Texas = []
   for i in df["ZCTA5"]:
     #select the first 3 characters in each zipcode
+    #if they have a match in the zip code list
+    #they are in Texas
     if i[0:3] in string_Tex_list:
       Texas.append(1)
     else:
       Texas.append(0)
   df["in_Texas"] = Texas
   return(df)
-    #if entry contains any of the str in the list, add a 1
-
-    #select first 3 digits of entry 
     
-
-
-
-
+#run function on shape_data
+in_Texas(shape_data)
 ```
 
 Attribution: https://stackoverflow.com/questions/35928170/is-there-a-numpy-function-for-generating-sequences-similar-to-rs-seq-function 
