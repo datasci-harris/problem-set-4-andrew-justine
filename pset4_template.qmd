@@ -57,7 +57,7 @@ import geopandas as gpd
 
 1. 
 ```{python}
-raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
+raw_health = "/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
 path_health16 = os.path.join(raw_health, "pos2016.csv")
 health16 = pd.read_csv(path_health16) 
 
@@ -374,6 +374,7 @@ print(filtered_closures.sort_values(by='FAC_NAME').head(10))
 
 ## Download Census zip code shapefile (10 pt) 
 
+<<<<<<< HEAD
 
 
 1. 
@@ -393,6 +394,11 @@ print(filtered_closures.sort_values(by='FAC_NAME').head(10))
 
 
 
+=======
+1. 
+    a.
+    b. 
+>>>>>>> 8585547e5784778355d0390d8601046e17ba29b1
 2. 
 
 Read the data into GeoDataFrame
