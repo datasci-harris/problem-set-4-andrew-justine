@@ -353,7 +353,9 @@ print(len(filtered_closures))
 ```
 
 ```{python}
-groupby zip and year first then look at observations in zip per year, want count of observations
+#groupby zip and year first then look at observations in zip per year, want count of observations
+
+#then map it to fac names on zip code and year, keeping only the ones that did decrease. For example: BEHAVIORAL HEALTHCARE CENTER AT CLARK supose that you found that ZIP 37040 from 2016 to 2017 did not decrease, then you would want to remove that observation since you are trying to find all the hospitals that closed and there was not a decrease for that ZIP code in 2017. in one zip code was present in 2016 or not present in 2017, it means that there was a closure. 
 ```
 
     b. How many hospitals do you have left?
