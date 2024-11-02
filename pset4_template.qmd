@@ -298,6 +298,7 @@ print(len(suspected_closures.loc[suspected_closures.groupby('FAC_NAME')['Year'].
 
 ```{python}
 print(suspected_closures.loc[suspected_closures.groupby('FAC_NAME')['Year'].idxmin()].head(10))
+suspected_closures_dirt = suspected_closures.loc[suspected_closures.groupby('FAC_NAME')['Year'].idxmin()]
 ```
 
 3. Not all closures are true closures, remove any suspected closures that are zipcodes where the number does not decrease in the year after the suspected closure.
