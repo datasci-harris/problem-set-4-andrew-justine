@@ -774,15 +774,8 @@ in using pd.merge()
 
 ```{python}
 
-
 #create geodataframe subsetted to directed codes
 sub_closure = shape_closure[shape_closure["Closure_Count"] >= 1]
-
-#
-sub_closure.centroid.buffer(1/10).plot(edgecolor="white").set_axis_off()
-plt.axis("off")
-plt.show()
-
 
 
 ```
