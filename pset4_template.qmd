@@ -57,9 +57,9 @@ import geopandas as gpd
 
 1. 
 ```{python}
-#raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
+raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
 
-raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
+#raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
 path_health16 = os.path.join(raw_health, "pos2016.csv")
 health16 = pd.read_csv(path_health16) 
 
@@ -513,13 +513,6 @@ newer_col = [CMS_row["PRVDR_NUM"] for index, CMS_row in CMS_by_zip.iterrows() if
 
 Texas_hospitals = pd.merge(Tex_shape, CMS_by_zip, left_on = "ZCTA5", right_on = "ZIP_CD", how = "left")
 
-#fill NA values in ZIP_CD and PRVDR_NUM with 0 
-Texas_hospitals["ZIP_CD"] = Texas_hospitals["ZIP_CD"].fillna(0)
-
-Texas_hospitals["PRVDR_NUM"] = Texas_hospitals["PRVDR_NUM"].fillna(0)
-
-#make choropleth
-Texas_hospitals.plot(column = "PRVDR_NUM", legend = True)
 ```
 
 Attribution: https://www.statology.org/pandas-merge-on-different-column-names/
@@ -531,7 +524,7 @@ I also asked ChatGPT how to use the code suggested in the article above.
 1. Create a GeoDataFrame for the centroid of each zip code nationally:
 zips_all_centroids. What are the dimensions of the resulting GeoDataFrame and what do each of the columns mean?
 
-The dimensions of the dataframe are 33120,6. And the columns are printed. For the columns, GEO_ID is the unqiue identifier for a geographic area and serves as the primary key for joining with other datasets. ZCTAS is the Zip Code Tabulation Area, NAME is the name typically associated with the zip. LSAD stands for Legal/Statistical Area Description which indicates the type of area the zip represents (so incorported, unincorporated, etc). CENSUSAREA represents the area size of the zip code region, usually measured in miles or kilometers and provides informations about the geographic extent of the area. The geometry column contains the geometric representation of the zip code area, holding the acutal shape and boundaries of the zip as a geometric object.
+The dimensions of the dataframe are 33120 rows and 6 columns. And the columns are printed. For the columns, GEO_ID is the unqiue identifier for a geographic area and serves as the primary key for joining with other datasets. ZCTAS is the Zip Code Tabulation Area, NAME is the name typically associated with the zip. LSAD stands for Legal/Statistical Area Description which indicates the type of area the zip represents (so incorported, unincorporated, etc). CENSUSAREA represents the area size of the zip code region, usually measured in miles or kilometers and provides informations about the geographic extent of the area. The geometry column contains the geometric representation of the zip code area, holding the acutal shape and boundaries of the zip as a geometric object.
 
 ```{python}
 #zips_all = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
@@ -548,7 +541,7 @@ print(zips_all_centroids.columns)
 2. Create two GeoDataFrames as subsets of zips_all_centroids. First,
 create all zip codes in Texas: zips_texas_centroids. Then, create all zip codes in Texas or a bordering state: zips_texas_borderstates_centroids, using the zip code prefixes to make these subsets. How many unique zip codes are in each of these subsets? 
 
-There are 402 uniqie zip codes in Texas and 1314 unique zip codes in it's bordering states.
+There are 402 unique zip codes in Texas and 1314 unique zip codes in the bordering states.
 
 ```{python}
 zips_all_centroids = gpd.read_file("C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp")
@@ -568,16 +561,19 @@ print(f"Unique ZIP codes in Texas and bordering states: {unique_bordering_zip_co
 
 3. Then create a subset of zips_texas_borderstates_centroids that contains only the zip codes with at least 1 hospital in 2016. Call the resulting GeoDataFrame zips_withhospital_centroids What kind of merge did you decide to do, and what variable are you merging on?
 
-I first changed the column names to match and then inner merged on the variable ZIP_CD.
+I first changed the column names to match and then inner merged on the variable ZIP_CD. There are 148 Texas zip codes with at least one hospital.
 
 ```{python}
-hospital_zip_codes = active_2016['ZIP_CD'].unique()
-hospital_zip_df = pd.DataFrame({'ZIP_CD': hospital_zip_codes})
-
+active_2016 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2016)]
 zips_texas_borderstates_centroids = zips_texas_borderstates_centroids.rename(columns={'ZCTA5': 'ZIP_CD'})
 
+hospital_zip_df = active_2016.rename(columns={'ZIP_CD': 'ZIP_CD'}) 
+hospital_zip_df['ZIP_CD'] = hospital_zip_df['ZIP_CD'].astype(str)
+zips_texas_borderstates_centroids['ZIP_CD'] = zips_texas_borderstates_centroids['ZIP_CD'].astype(str)
+
 zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(
-    hospital_zip_df, on='ZIP_CD', how='inner')
+    hospital_zip_df, on='ZIP_CD', how='inner'
+)
 
 print(f'Number of ZIP codes with at least one hospital in 2016: {len(zips_withhospital_centroids)}')
 ```
@@ -585,9 +581,12 @@ print(f'Number of ZIP codes with at least one hospital in 2016: {len(zips_withho
 4. For each zip code in zips_texas_centroids, calculate the distance to the
 nearest zip code with at least one hospital in zips_withhospital_centroids.
 
+    a.This is a computationally-intensive join. Before attempting to do the entire join, subset to 10 zip codes in zips_texas_centroids and try the join. How long did it take? Approximately how long do you estimate the entire procedure will take?
+
+    The code for this question is above. It took 9.98 seconds to compute for 10 zip codes. I think it will take roughly 150 seconds for the entire procedure to complete. 
+
 ```{python}
 import time
-
 subset_texas_zips = zips_texas_centroids.sample(n=10, random_state=1) 
 start_time = time.time()
 subset_texas_zips['Nearest_Hospital_Distance'] = calculate_nearest_hospital_distance(subset_texas_zips, zips_withhospital_centroids)
@@ -595,35 +594,29 @@ end_time = time.time()
 
 print(subset_texas_zips[['ZCTA5', 'Nearest_Hospital_Distance']])
 print(f'Time taken for subset calculation: {end_time - start_time:.4f} seconds')
-
 ```
 
-    a.This is a computationally-intensive join. Before attempting to do the entire join, subset to 10 zip codes in zips_texas_centroids and try the join. How long did it take? Approximately how long do you estimate the entire procedure will take?
+    b. Now try doing the full calculation and time how long it takes. How close is it to your estimation?
 
-    It took 8.52 seconds to compute for 10 zip codes. I think it will take roughly 150 seconds for the entire procedure to complete. 
+    The code for this question is above. It took 437.47 seconds to do the whole calculation, which was very far from my estimate.
 
 ```{python}
-zips_texas_centroids = zips_texas_centroids.to_crs(zips_withhospital_centroids.crs)
+import time
 
-def calculate_nearest_hospital_distance(texas_zips, hospital_zips):
-    distances = []
-    for _, tex_zip in texas_zips.iterrows():
-        distance_series = hospital_zips.geometry.distance(tex_zip.geometry)
-        min_distance = distance_series.min()
-        distances.append(min_distance)
+def calculate_nearest_hospital_distance(zips, hospitals):
+    zips = zips.to_crs(hospitals.crs)
+    distances = zips.geometry.apply(
+        lambda zip_geom: hospitals.distance(zip_geom).min()
+    )
     return distances
 
 start_time = time.time()
 zips_texas_centroids['Nearest_Hospital_Distance'] = calculate_nearest_hospital_distance(zips_texas_centroids, zips_withhospital_centroids)
 end_time = time.time()
 
-print(zips_texas_centroids[['ZCTA5', 'Nearest_Hospital_Distance']])
-print(f'Time taken for distance calculation: {end_time - start_time:.4f} seconds')
+print(zips_texas_centroids[['ZCTA5', 'Nearest_Hospital_Distance']].head())
+print(f'Time taken for full calculation: {end_time - start_time:.4f} seconds')
 ```
-
-    b. Now try doing the full calculation and time how long it takes. How close is it to your estimation?
-
-    It took 386.52 seconds to do the whole calculation, which was very far from my estimate.
 
 5. Calculate the average distance to the nearest hospital for each zip code in Texas.
 
@@ -641,7 +634,7 @@ print(f"Average distance to the nearest hospital for each ZIP code in Texas: {av
 
     b. Report the average distance in miles. Does this value make sense?
 
-    This value does make sense as all distance in the US is measured in miles, units is not useful to gauge real life distance.
+    This value does make sense as all distance in the US is measured in miles, units is not useful to gauge real life distance. After converting to miles, the average is 1.4 miles to the nearest hospital.
 
 ```{python}
 # Convert the nearest hospital distances from meters to miles
@@ -652,36 +645,21 @@ average_distance_miles = zips_texas_centroids['Nearest_Hospital_Distance_Miles']
 print(f"Average distance to the nearest hospital for each ZIP code in Texas: {average_distance_miles:.2f} miles")
 ```
 
-```{python}
-print(type(zips_texas_centroids))
-
-```
-
     c. Map the value for each zip code.
 
 ```{python}
-import geopandas as gpd
 import matplotlib.pyplot as plt
-import numpy as np
-
-# Generate the list of ZIP codes
-Tex_zip_list = np.linspace(start=750, stop=799, num=50).astype(np.int32)
-
-# Filter the GeoDataFrame to include only the relevant ZIP codes
-filtered_zips = zips_texas_centroids[zips_texas_centroids['ZIP_C'].isin(Tex_zip_list)]
-
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+zips_texas_centroids.plot(column='Nearest_Hospital_Distance_Miles',
+                          ax=ax,
+                          legend=True,
+                          cmap='OrRd',
+                          edgecolor='black',
+                          legend_kwds={'label': "Distance to Nearest Hospital (Miles)",
+                                       'orientation': "horizontal"})
 
-filtered_zips.plot(column='Nearest_Hospital_Distance_Miles',
-                   ax=ax,
-                   legend=True,
-                   cmap='OrRd',
-                   edgecolor='black',
-                   legend_kwds={'label': "Distance to Nearest Hospital (Miles)",
-                                'orientation': "horizontal"})
-
-ax.set_title('Distance to Nearest Hospital for Selected Texas ZIP Codes', fontsize=15)
+ax.set_title('Distance to Nearest Hospital for Texas ZIP Codes', fontsize=15)
 ax.set_xlabel('Longitude', fontsize=12)
 ax.set_ylabel('Latitude', fontsize=12)
 
@@ -691,110 +669,8 @@ plt.show()
 ## Effects of closures on access in Texas (15 pts)
 
 1. 
-Create df with only "cleaned" closures
-```{python}
-#merge to bring in zipcodes, but only those caught in total_closures
-new_total_closures = pd.merge(total_closures, suspected_closures, on = "FAC_NAME", how = "inner")
-
-#drop duplicates
-new_total_closures = new_total_closures.drop_duplicates(subset = "FAC_NAME")
-
-#drop "Year_y"
-new_total_closures = new_total_closures.drop(columns = "Year_y")
-
-#change Year_x to Year
-new_total_closures = new_total_closures.rename(columns = {"Year_x":"Year"})
-
-```
-
-Use groupby to create list of closures
-```{python}
-#groupby zipcode
-TX_closed = new_total_closures.groupby("ZIP_CD")["FAC_NAME"].count()
-
-#reset index
-TX_closed = TX_closed.reset_index()
-
-#to DataFrame
-TX_closed = pd.DataFrame(TX_closed)
-
-#rename FAC_NAME to Closure_Count
-TX_closed = TX_closed.rename(columns = {"FAC_NAME":"Closure_Count"})
-```
-
-Convert ZIP_CD to string
-```{python}
-#convert ZIP_CD to float
-TX_closed["ZIP_CD"] = TX_closed["ZIP_CD"].astype(float)
-#convert ZIP_CD to int
-TX_closed["ZIP_CD"] = TX_closed["ZIP_CD"].apply(np.int64)
-#convert ZIP_CD to string
-TX_closed["ZIP_CD"] = TX_closed["ZIP_CD"].astype(str)
-
-#add in_Texas column
-in_Texas(TX_closed, "ZIP_CD")
-#filter for only Texas
-TX_closed = TX_closed[TX_closed["in_Texas"] == 1]
-
-print("This table shows hospital closures in TX by zipcode")
-
-print(TX_closed)
-```
-
-
-
 2. 
-Perform a merge to create shapefile containing the closure_count data
-```{python}
-
-shape_closure = pd.merge(Tex_shape, TX_closed, left_on = "ZCTA5", right_on = "ZIP_CD", how = "left")
-
-#fill in NA values in Closure_Count with 0
-shape_closure["Closure_Count"] = shape_closure["Closure_Count"].fillna(0)
-
-#drop ZIP_CD (leaving only ZCTA5) and drop in_Texas_y
-
-shape_closure = shape_closure.drop(columns = "ZIP_CD")
-
-shape_closure = shape_closure.drop(columns = "in_Texas_y")
-
-#rename in_Texas_x to in_Texas
-
-shape_closure = shape_closure.rename(columns = {"in_Texas_x":"in_Texas"})
-
-```
-
-Plot choropleth
-```{python}
-shape_closure.plot(column = "Closure_Count", legend = True)
-
-
-#also print number of directly affected zipcodes
-len(shape_closure[shape_closure["Closure_Count"] >= 1])
-```
-
-It appears that there are 231 zipcodes in Texas that were
-directly impacted by a closure, based off of the shape file
-data we created. However, this is about 20 zipcodes lower
-than the number implied in the list of TX closures by zipcode.
-There are a number of potential reasons for this, including 
-potential error in the original data (e.g. zipcodes that 
-are not included in the .shp file) or, perhaps more likely,
-a consequence of data cleaning choices. 
-
-Attribution: I asked ChatGPT why I might have lost some values
-in using pd.merge()
 3. 
-
-```{python}
-shape_closure.centroid.buffer(1).plot(edgecolor="white").set_axis_off()
-plt.axis("off")
-plt.show()
-
-
-
-```
-
 4. 
 
 ## Reflecting on the exercise (10 pts) 
