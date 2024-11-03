@@ -258,7 +258,7 @@ Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataf
 
 1. Create a list of all hospitals that were active in 2016 that were suspected to have closed by 2019. Record the facility name and zip of each hospital as well as the year of suspected closure. How many hospitals fit in this definition?
 
-3,303 hospitals fit this definition, out of 29085 total hospitals.
+3,303 hospitals fit this definition, out of over 7000 total hospitals.
 
 ```{python}
 active_2016 = df_health[(df_health['PGM_TRMNTN_CD'] == 0) & (df_health['Year'] == 2016)]
@@ -306,54 +306,43 @@ print(suspected_closures.loc[suspected_closures.groupby('FAC_NAME')['Year'].idxm
 
     a. Among the suspected closures, how many hospitals fit this definition? After correcting, how many do you have left?
 
-    Working with the definition given, we have 166 mergers/acquisitions.
+    Working with the definition given, we have 3264 mergers/acquisitions.
 
 ```{python}
+total_closures = suspected_closures.loc[suspected_closures.groupby('FAC_NAME')['Year'].idxmin()].sort_values('FAC_NAME')[['FAC_NAME', 'Year']]
 zip_counts = suspected_closures.groupby(['ZIP_CD', 'Year']).size().reset_index(name='Observation_Count')
 
-# Step 2: Sort by ZIP_CD and Year
 zip_counts = zip_counts.sort_values(['ZIP_CD', 'Year'])
 
-# Step 3: Calculate the change in observations
 zip_counts['Prev_Observation_Count'] = zip_counts.groupby('ZIP_CD')['Observation_Count'].shift(1)
 zip_counts['Change'] = zip_counts['Observation_Count'] - zip_counts['Prev_Observation_Count']
 
-# Step 4: Filter for ZIP codes with no decrease or no disappearance
+#Filter for ZIP codes with no decrease or no disappearance
 no_decrease = zip_counts[(zip_counts['Change'] >= 0) | (zip_counts['Prev_Observation_Count'].notnull())]
 
-# Step 5: Select relevant columns and display results
 result = no_decrease[['ZIP_CD', 'Year', 'Observation_Count']]
 print(result)
-```
 
-```{python}
-# Merge the DataFrames on ZIP_CD
 merged_results = pd.merge(suspected_closures, no_decrease, on='ZIP_CD', how='inner')
-
-# Drop duplicates to show only unique FAC_NAMEs
-unique_fac_names = merged_results[['FAC_NAME']].drop_duplicates()
-
-# Display the unique FAC_NAMEs
-print(unique_fac_names)
+mergers = merged_results[['FAC_NAME']].drop_duplicates()
+print(mergers)
 ```
 
 ```{python}
-print(suspected_closures[['FAC_NAME', 'Year']].sort_values(by='FAC_NAME').head(10)) how ask only for unique fac_name in the first year they appear?
-
-filtered_codes = suspected_closures.groupby(['ZIP_CD', 'Year']) and list the number of obersations we have per zip code and year
+print(len(mergers))
 ```
 
     b. How many hospitals do you have left?
-      Subtracting the mergers, we have 10084 hospitals left.
+      Subtracting the mergers, we have 39 hospitals left.
 
 ```{python}
-print((len(suspected_closures) - len(filtered_closures)))
+print((len(total_closures) - len(mergers)))
 ```
 
     c. Sort and report the first 10 rows.
 
 ```{python}
-print(filtered_closures.sort_values(by='FAC_NAME').head(10))
+print(mergers.sort_values(by='FAC_NAME').head(10))
 ``` 
 
 ## Download Census zip code shapefile (10 pt) 
@@ -385,7 +374,9 @@ print(filtered_closures.sort_values(by='FAC_NAME').head(10))
 Read the data into GeoDataFrame
 ```{python}
 #read the .shp file in
-the_path = "C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
+#the_path = "C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
+
+the_path = "/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
 
 shape_data = gpd.read_file(the_path)
 
@@ -473,6 +464,7 @@ CMS_by_zip = by_zip(Texas_health)
 print(CMS_by_zip)
 ```
 
+
 Add the CMS Number column from the grouped df to 
 the shape data
 ```{python}
@@ -490,9 +482,7 @@ newer_col = [CMS_row["PRVDR_NUM"] for index, CMS_row in CMS_by_zip.iterrows() if
 
 
 
-
 #subsetting for shape_file ZCTA5 == String_Zip in CMS_by_zip
-
 
 
 ```
@@ -505,13 +495,11 @@ that the correct values are being compared, and the use of itterow().
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
-1. 
+1. Create a GeoDataFrame for the centroid of each zip code nationally:
+zips_all_centroids. What are the dimensions of the resulting GeoDataFrame and what do each of the columns mean?
 
 ```{python}
-import geopandas as gpd
-
-# Load the GeoDataFrame for ZIP code centroids (assumed to be already done)
-# zips_all_centroids = gpd.read_file('path_to_zip_code_data.shp') # If not already loaded
+zips_all_centroids = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
 
 # Filter for Texas ZIP codes (assuming Texas ZIP codes start with '75')
 zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZIP_CD'].str.startswith('75')]
@@ -521,7 +509,7 @@ unique_texas_zip_codes = zips_texas_centroids['ZIP_CD'].nunique()
 print(f"Unique ZIP codes in Texas: {unique_texas_zip_codes}")
 
 # Create a mask for bordering states (Texas and bordering states)
-bordering_states_prefixes = ['75', '87', '73', '72', '70']
+bordering_states_prefixes = ['75', '87', '73', '72', '70']  # Adjust based on actual bordering states
 zips_texas_borderstates_centroids = zips_all_centroids[
     zips_all_centroids['ZIP_CD'].str.startswith(tuple(bordering_states_prefixes))
 ]
@@ -532,7 +520,11 @@ print(f"Unique ZIP codes in Texas and bordering states: {unique_bordering_zip_co
 
 ```
 
-2. 
+2. Create two GeoDataFrames as subsets of zips_all_centroids. First,
+create all zip codes in Texas: zips_texas_centroids. Then, create all zip codes
+in Texas or a bordering state: zips_texas_borderstates_centroids, using the zip
+code prefixes to make these subsets. How many unique zip codes are in each of these
+subsets?
 
 ```{python}
 # Sample structure of hospital data
@@ -544,7 +536,10 @@ hospitals_df = pd.DataFrame(hospital_data)
 
 ```
 
-3. 
+3. Then create a subset of zips_texas_borderstates_centroids that con-
+tains only the zip codes with at least 1 hospital in 2016. Call the resulting Geo-
+DataFrame zips_withhospital_centroids What kind of merge did you decide to do,
+and what variable are you merging on?
 
 ```{python}
 import geopandas as gpd
@@ -573,7 +568,8 @@ print(zips_texas_centroids[['ZIP_CD', 'Nearest_Hospital_Distance']])
 
 ```
 
-4. 
+4. For each zip code in zips_texas_centroids, calculate the distance to the
+nearest zip code with at least one hospital in zips_withhospital_centroids.
 
 ```{python}
 import geopandas as gpd
@@ -603,9 +599,17 @@ print(zips_texas_centroids[['ZIP_CD', 'Nearest_Hospital_Distance']])
 
 ```
 
-    a.
+    a.This is a computationally-intensive join. Before attempting to do the entire join,
+subset to 10 zip codes in zips_texas_centroids and try the join. How long did
+it take? Approximately how long do you estimate the entire procedure will take?
+b. Now try doing the full calculation and time how long it takes. How close is it to
+your estimation?
     b.
-5. 
+5. This is a computationally-intensive join. Before attempting to do the entire join,
+subset to 10 zip codes in zips_texas_centroids and try the join. How long did
+it take? Approximately how long do you estimate the entire procedure will take?
+b. Now try doing the full calculation and time how long it takes. How close is it to
+your estimation?
 
 ```{python}
 # Calculate the average distance to the nearest hospital
