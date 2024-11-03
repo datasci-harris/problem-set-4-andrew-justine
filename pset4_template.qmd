@@ -646,51 +646,22 @@ print(f"Average distance to the nearest hospital for each ZIP code in Texas: {av
     c. Map the value for each zip code.
 
 ```{python}
-import altair as alt
-import geopandas as gpd
-import pandas as pd
+import matplotlib.pyplot as plt
 
-# Ensure that your GeoDataFrame has the 'Nearest_Hospital_Distance_Miles' column
-# and contains only the relevant ZIP codes
-Tex_zip_list = np.linspace(start=750, stop=799, num=50).astype(np.int32)
-filtered_zips = zips_texas_centroids[zips_texas_centroids['ZCTA5'].isin(Tex_zip_list)]
+fig, ax = plt.subplots(1, 1, figsize=(12, 10))
+zips_texas_centroids.plot(column='Nearest_Hospital_Distance_Miles',
+                          ax=ax,
+                          legend=True,
+                          cmap='OrRd',
+                          edgecolor='black',
+                          legend_kwds={'label': "Distance to Nearest Hospital (Miles)",
+                                       'orientation': "horizontal"})
 
-# Convert GeoDataFrame to a DataFrame with necessary columns
-filtered_zips['Nearest_Hospital_Distance_Miles'] = filtered_zips['Nearest_Hospital_Distance'] / 1609.34  # Convert meters to miles if needed
-filtered_zips['geometry'] = filtered_zips['geometry'].apply(lambda geom: geom.wkt)
+ax.set_title('Distance to Nearest Hospital for Texas ZIP Codes', fontsize=15)
+ax.set_xlabel('Longitude', fontsize=12)
+ax.set_ylabel('Latitude', fontsize=12)
 
-# Create a DataFrame for Altair
-altair_data = pd.DataFrame({
-    'geometry': filtered_zips['geometry'],
-    'ZIP_Code': filtered_zips['ZCTA5'],
-    'Distance': filtered_zips['Nearest_Hospital_Distance_Miles']
-})
-
-# Altair chart
-base = alt.Chart(altair_data).mark_geoshape(
-    fill='lightgray',
-    stroke='black'
-).encode(
-    tooltip=['ZIP_Code:O', 'Distance:Q']
-).transform_lookup(
-    lookup='geometry',
-    from_=altair_data
-)
-
-# Add color encoding based on distance
-colored = base.encode(
-    color=alt.Color('Distance:Q', scale=alt.Scale(scheme='oranges'), title='Distance to Nearest Hospital (Miles)')
-)
-
-# Render the chart
-colored.properties(
-    title='Distance to Nearest Hospital for Selected Texas ZIP Codes'
-).project(
-    type='albersUsa'
-).configure_view(
-    stroke=None
-).display()
-
+plt.show()
 ```    
 
 ## Effects of closures on access in Texas (15 pts)
