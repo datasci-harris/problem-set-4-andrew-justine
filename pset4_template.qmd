@@ -411,7 +411,9 @@ shape_data = gpd.read_file(the_path)
 
 Attribution: https://automating-gis-processes.github.io/CSC/notebooks/L2/geopandas-basics.html 
 
-Restrict only to Texas zip codes
+Restrict shape_data only to Texas zip codes
+
+First create a list of Texas zipcodes
 ```{python}
 
 #generate list of Texas zipcode leading numbers
@@ -441,12 +443,12 @@ def string_puller(df):
   return(my_strings)
 ```
 
-
+Create a column for being in Texas
 ```{python}
 #create a binary variable for in or outside of Texas
-def in_Texas(df):
+def in_Texas(df, condition):
   Texas = []
-  for i in df["ZCTA5"]:
+  for i in df[condition]:
     #select the first 3 characters in each zipcode
     #if they have a match in the zip code list
     #they are in Texas
@@ -458,16 +460,40 @@ def in_Texas(df):
   return(df)
     
 #run function on shape_data
-in_Texas(shape_data)
+in_Texas(shape_data, "ZCTA5")
+```
+
+Restrict shape_data to in_Texas
+```{python}
+Tex_shape = shape_data[shape_data["in_Texas"] == 1]
+
 ```
 
 Attribution: https://stackoverflow.com/questions/35928170/is-there-a-numpy-function-for-generating-sequences-similar-to-rs-seq-function 
 
 Calculate the number of hospitals by zipcode in 2016
-```{python}
 
-#subset to only in_Texas zipcodes
-Texas_health = df_health[df_health["in_Texas"] == 1]
+Clean up ZIP_CD data type
+```{python}
+#convert ZIP_CD to float
+df_health["ZIP_CD"] = df_health["ZIP_CD"].astype(float)
+#convert ZIP_CD to int
+df_health["ZIP_CD"] = df_health["ZIP_CD"].apply(np.int64)
+#convert ZIP_CD to string
+df_health["ZIP_CD"] = df_health["ZIP_CD"].astype(str)
+```
+
+Use function from earlier to subset df_health to in_Texas
+```{python}
+#add in_Texas column to df_health
+in_Texas(df_health, "ZIP_CD")
+
+#subset df_health to in_Texas == 1
+Tex_health = df_health[df_health["in_Texas"] == 1]
+```
+
+Created a grouped object containing
+```{python}
 
 def by_zip(df):
   #subset for 2016
@@ -485,40 +511,25 @@ def by_zip(df):
   df_grouped = pd.DataFrame(grouped)
   return(df_grouped)
 
-#run on Texas_health
-CMS_by_zip = by_zip(Texas_health)
+#run on Tex_health
+CMS_by_zip = by_zip(Tex_health)
 
 print(CMS_by_zip)
 ```
 
+Attribution: https://realpython.com/pandas-groupby/ "Example 1".
+
 Add the CMS Number column from the grouped df to 
-the shape data
+the shape data using pd.merge()
 ```{python}
-#add an int version of ZIP_CD to CMS_by_zip
-CMS_by_zip["Int_Zip"] = [int(i) for i in CMS_by_zip["ZIP_CD"]]
 
-#convert that int version into a string
-CMS_by_zip["String_Zip"] = [str(i) for i in CMS_by_zip["Int_Zip"]]
-
-#comprehension where if ZCTA5 in String_Zip add entry into
-#new column 
-new_col = [i for i in shape_data["ZCTA5"].values if i in CMS_by_zip["String_Zip"].values]
-
-newer_col = [CMS_row["PRVDR_NUM"] for index, CMS_row in CMS_by_zip.iterrows() if CMS_row["String_Zip"] in new_col]
-
-
-
-
-#subsetting for shape_file ZCTA5 == String_Zip in CMS_by_zip
-
+Texas_hospitals = pd.merge(Tex_shape, CMS_by_zip, left_on = "ZCTA5", right_on = "ZIP_CD", how = "inner")
 
 
 ```
 
-Attribution: https://realpython.com/pandas-groupby/ "Example 1". Also I asked ChatGPT
-why my new_col list comprehension wasn't working, and essentially the main addition
-that I have included, based on its advice, is the ".values", which helps to ensure
-that the correct values are being compared, and the use of itterow().
+Attribution: https://www.statology.org/pandas-merge-on-different-column-names/
+I also asked ChatGPT how to use the code suggested in the article above. 
 
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
