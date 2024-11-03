@@ -507,9 +507,7 @@ zips_all_centroids. What are the dimensions of the resulting GeoDataFrame and wh
 The dimensions of the dataframe are 33120,6. And the columns are printed. For the columns, GEO_ID is the unqiue identifier for a geographic area and serves as the primary key for joining with other datasets. ZCTAS is the Zip Code Tabulation Area, NAME is the name typically associated with the zip. LSAD stands for Legal/Statistical Area Description which indicates the type of area the zip represents (so incorported, unincorporated, etc). CENSUSAREA represents the area size of the zip code region, usually measured in miles or kilometers and provides informations about the geographic extent of the area. The geometry column contains the geometric representation of the zip code area, holding the acutal shape and boundaries of the zip as a geometric object.
 
 ```{python}
-zips_all = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
-
-zips_all_centroids = zips_all.copy()
+zips_all_centroids = shape_data.copy()
 zips_all_centroids['geometry'] = zips_all_centroids.geometry.centroid
 
 print(zips_all_centroids.shape)
@@ -522,8 +520,7 @@ create all zip codes in Texas: zips_texas_centroids. Then, create all zip codes 
 There are 402 uniqie zip codes in Texas and 1314 unique zip codes in it's bordering states.
 
 ```{python}
-zips_all_centroids = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
-zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith('75')]
+zips_texas_centroids = shape_data[shape_data['ZCTA5'].str.startswith('75')]
 
 unique_texas_zip_codes = zips_texas_centroids['ZCTA5'].nunique()
 print(f"Unique ZIP codes in Texas: {unique_texas_zip_codes}")
@@ -612,7 +609,7 @@ print(f"Average distance to the nearest hospital for each ZIP code in Texas: {av
 
     b. Report the average distance in miles. Does this value make sense?
 
-    This value does make sense as all distance in the US is measured in miles. 
+    This value does make sense as all distance in the US is measured in miles, units is not useful to gauge real life distance.
 
 ```{python}
 # Convert the nearest hospital distances from meters to miles
@@ -623,32 +620,40 @@ average_distance_miles = zips_texas_centroids['Nearest_Hospital_Distance_Miles']
 print(f"Average distance to the nearest hospital for each ZIP code in Texas: {average_distance_miles:.2f} miles")
 ```
 
+```{python}
+print(type(zips_texas_centroids))
+
+```
+
     c. Map the value for each zip code.
 
 ```{python}
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Load the shapefile containing Texas ZIP codes
-zips_texas = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')  # Replace with your file path
+# Generate the list of ZIP codes
+Tex_zip_list = np.linspace(start=750, stop=799, num=50).astype(np.int32)
 
-# Ensure the GeoDataFrame has the correct CRS
-zips_texas = zips_texas.to_crs(epsg=4269)  # Adjust if necessary
+# Filter the GeoDataFrame to include only the relevant ZIP codes
+filtered_zips = zips_texas_centroids[zips_texas_centroids['ZIP_C'].isin(Tex_zip_list)]
 
-# Create a figure and axis for the plot
+
 fig, ax = plt.subplots(1, 1, figsize=(12, 10))
 
-# Plot all Texas ZIP codes
-zips_texas.plot(ax=ax, color='lightblue', edgecolor='black')
+filtered_zips.plot(column='Nearest_Hospital_Distance_Miles',
+                   ax=ax,
+                   legend=True,
+                   cmap='OrRd',
+                   edgecolor='black',
+                   legend_kwds={'label': "Distance to Nearest Hospital (Miles)",
+                                'orientation': "horizontal"})
 
-# Add title and labels
-ax.set_title('All Texas ZIP Codes', fontsize=15)
+ax.set_title('Distance to Nearest Hospital for Selected Texas ZIP Codes', fontsize=15)
 ax.set_xlabel('Longitude', fontsize=12)
 ax.set_ylabel('Latitude', fontsize=12)
 
-# Show the plot
 plt.show()
-
 ```    
 
 ## Effects of closures on access in Texas (15 pts)
@@ -664,5 +669,5 @@ plt.show()
 
 2. Consider the way we are identifying zip codes affected by closures. How well does this reflect changes in zip-code-level access to hospitals? Can you think of some ways to improve this measure?
 
-I think there are issues with how we code and define true closures from mergers/acquisitions. The definition itself is confusng as we compare different observations from a year to year basis but a hospital could still close even if it was a merger. Furthermore, it is unclear how we discuss what we count as a merger, especially if it gets confusing how to calculate when a merger occurred. Also, this does not take into account urban areas vs rural area where distance makes a huge difference for people. 
+I think there are issues with how we code and define true closures from mergers/acquisitions. The definition itself is confusng as we compare different observations from a year to year basis but a hospital could still close even if it was a merger. Furthermore, it is unclear how we discuss what we count as a merger, especially if it gets confusing how to calculate when a merger occurred. Also, this does not take into account urban areas vs rural area where distance makes a huge difference for people. I do not think mergers and acquisitions reflect changes in zip code level hospital access siginifcantly. I think it the type of facility closure is more likely to have an impact.
 
