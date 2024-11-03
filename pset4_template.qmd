@@ -534,7 +534,9 @@ zips_all_centroids. What are the dimensions of the resulting GeoDataFrame and wh
 The dimensions of the dataframe are 33120,6. And the columns are printed. For the columns, GEO_ID is the unqiue identifier for a geographic area and serves as the primary key for joining with other datasets. ZCTAS is the Zip Code Tabulation Area, NAME is the name typically associated with the zip. LSAD stands for Legal/Statistical Area Description which indicates the type of area the zip represents (so incorported, unincorporated, etc). CENSUSAREA represents the area size of the zip code region, usually measured in miles or kilometers and provides informations about the geographic extent of the area. The geometry column contains the geometric representation of the zip code area, holding the acutal shape and boundaries of the zip as a geometric object.
 
 ```{python}
-zips_all = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
+#zips_all = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
+
+zips_all = gpd.read_file("C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine")
 
 zips_all_centroids = zips_all.copy()
 zips_all_centroids['geometry'] = zips_all_centroids.geometry.centroid
@@ -549,7 +551,7 @@ create all zip codes in Texas: zips_texas_centroids. Then, create all zip codes 
 There are 402 uniqie zip codes in Texas and 1314 unique zip codes in it's bordering states.
 
 ```{python}
-zips_all_centroids = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
+zips_all_centroids = gpd.read_file("C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp")
 zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith('75')]
 
 unique_texas_zip_codes = zips_texas_centroids['ZCTA5'].nunique()
@@ -797,7 +799,29 @@ plt.show()
 
 ## Reflecting on the exercise (10 pts) 
 
-1.
+
+1. Based on my understanding of the methodology, I can see
+a few different ways in which our first pass may be imperfect.
+Firstly, it is possible that, due to some of the complexities 
+involved in hospital ownership, some hospitals that we may 
+mark as open may have changed their terms of service, and no 
+longer fall under the category of short term hospital, but 
+not have reported this at the time that they reported their 
+status to the relevant authorities. Additionally, some of the
+hospital names (FAC_NAME) actually have the word closed in them,
+for multiple years, and it would probably be worthwhile to 
+select for those hospital names to understand how many there are,
+and potentially create a comparison between the hospitals that 
+are reported as closed in the dataset and the list of hospitals 
+that we identified as closed in the first pass. 
+
+We could also cross-reference data from other sources to develop
+multiple indicators determining whether a hospital is open or 
+closed, and then create a measure with multiple levels of 
+confidence (e.g. if the hospital is listed as closed by local
+property taxation records and in this dataset, it will be at 
+level 2, and so on. The objective would be to see if the hospital
+matches status across data sets.) 
 
 2. Consider the way we are identifying zip codes affected by closures. How well does this reflect changes in zip-code-level access to hospitals? Can you think of some ways to improve this measure?
 
