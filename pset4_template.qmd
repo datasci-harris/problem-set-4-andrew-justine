@@ -57,7 +57,9 @@ import geopandas as gpd
 
 1. 
 ```{python}
-raw_health = "/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
+#raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
+
+raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
 path_health16 = os.path.join(raw_health, "pos2016.csv")
 health16 = pd.read_csv(path_health16) 
 
@@ -92,7 +94,7 @@ def short_term(X):
 
 ```
 
-Run function on health16
+Run function on health16, creating a count of 
 ```{python}
 short16 = short_term(health16)
 
@@ -374,7 +376,6 @@ print(filtered_closures.sort_values(by='FAC_NAME').head(10))
 
 ## Download Census zip code shapefile (10 pt) 
 
-<<<<<<< HEAD
 
 
 1. 
@@ -394,11 +395,9 @@ print(filtered_closures.sort_values(by='FAC_NAME').head(10))
 
 
 
-=======
 1. 
     a.
     b. 
->>>>>>> 8585547e5784778355d0390d8601046e17ba29b1
 2. 
 
 Read the data into GeoDataFrame
@@ -463,6 +462,64 @@ in_Texas(shape_data)
 ```
 
 Attribution: https://stackoverflow.com/questions/35928170/is-there-a-numpy-function-for-generating-sequences-similar-to-rs-seq-function 
+
+Calculate the number of hospitals by zipcode in 2016
+```{python}
+
+#subset to only in_Texas zipcodes
+Texas_health = df_health[df_health["in_Texas"] == 1]
+
+def by_zip(df):
+  #subset for 2016
+  hosp_2016 = df[df["Year"] == 2016]
+
+  #groupby zipcode, select CMS Identification number, and 
+  #return a count of the CMS ID numbers associated with
+  #each Zipcode
+  grouped = hosp_2016.groupby("ZIP_CD")["PRVDR_NUM"].count()
+
+  #reset index
+  grouped = grouped.reset_index()
+
+  #save to dataframe
+  df_grouped = pd.DataFrame(grouped)
+  return(df_grouped)
+
+#run on Texas_health
+CMS_by_zip = by_zip(Texas_health)
+
+print(CMS_by_zip)
+```
+
+Add the CMS Number column from the grouped df to 
+the shape data
+```{python}
+#add an int version of ZIP_CD to CMS_by_zip
+CMS_by_zip["Int_Zip"] = [int(i) for i in CMS_by_zip["ZIP_CD"]]
+
+#convert that int version into a string
+CMS_by_zip["String_Zip"] = [str(i) for i in CMS_by_zip["Int_Zip"]]
+
+#comprehension where if ZCTA5 in String_Zip add entry into
+#new column 
+new_col = [i for i in shape_data["ZCTA5"].values if i in CMS_by_zip["String_Zip"].values]
+
+newer_col = [CMS_row["PRVDR_NUM"] for index, CMS_row in CMS_by_zip.iterrows() if CMS_row["String_Zip"] in new_col]
+
+
+
+
+#subsetting for shape_file ZCTA5 == String_Zip in CMS_by_zip
+
+
+
+```
+
+Attribution: https://realpython.com/pandas-groupby/ "Example 1". Also I asked ChatGPT
+why my new_col list comprehension wasn't working, and essentially the main addition
+that I have included, based on its advice, is the ".values", which helps to ensure
+that the correct values are being compared, and the use of itterow().
+
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
