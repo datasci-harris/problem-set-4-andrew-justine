@@ -57,9 +57,9 @@ import geopandas as gpd
 
 1. 
 ```{python}
-raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
+#raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
 
-#raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
+raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
 path_health16 = os.path.join(raw_health, "pos2016.csv")
 health16 = pd.read_csv(path_health16) 
 
@@ -94,15 +94,29 @@ def short_term(X):
 
 ```
 
-Run function on health16, creating a count of 
+Run function on health16, creating a count of hospitals
 ```{python}
 short16 = short_term(health16)
 
 print("There are ", len(short16), " hospitals in this dataset")
 ```
 
-    a.
-    b.
+    a. There are 7,245 short term 
+       hospitals in the 2016 dataset. This number seems
+       a bit low.
+    b. Upon re-reading some of the article provided in this pset and taking 
+       a look at data from Statista (https://www.statista.com/statistics/185843/number-of-all-hospitals-in-the-us/)
+       I see that this number appears to be, in fact, a bit high. The
+       article provided in the dataset places the number of short term,
+       acute care hospitals at around 5000, while in the Statology 
+       explainer the total number of U.S. hospitals in 2016 is pegged
+       at around 5,500. Some potential causes for this discrepancy may include
+       varying definitions of hospital, and particularly short term hospital;
+       the fact that, potentially, the data from Statista and the Kaiser 
+       Family Foundation consists of hospital numbers as they stood at a
+       different time than the time in which the data were recorded for this
+       dataset (e.g.: this dataset covers Q4, perhaps other sources 
+       gather data for Q1? Or average over an entire year.)
 3. 
 
 short term function on health17
@@ -192,7 +206,7 @@ alt.Chart(df_health).mark_bar().encode(
 ```
 
 4.
-
+  a.
 ```{python}
 # create a function to iterate through PRVDR_NUM 
 def unique_comp(column):
@@ -251,8 +265,14 @@ alt.Chart(df_CMS).mark_bar().encode(
 ```
 
 Attribution: https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataframe/ 
-    a.
-    b.
+    b. These plots suggest that, disaggregated by year, each observation
+        is equal to a unique hospital. In addition, the number of unique 
+        hospitals in 2019 is exactly the same as the number of unique 
+        hospitals for the dataset overall, with each year appearing to
+        have all unique observations, indicating that either more hospitals
+        are being opened than the number that are closing down, or, perhaps
+        more likely, that there is an issue with the way we are analyzing
+        this data.
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
@@ -502,12 +522,18 @@ print(CMS_by_zip)
 Attribution: https://realpython.com/pandas-groupby/ "Example 1".
 
 Add the CMS Number column from the grouped df to 
-the shape data using pd.merge()
+the shape data using pd.merge(). Then make choropleth
 ```{python}
 
-Texas_hospitals = pd.merge(Tex_shape, CMS_by_zip, left_on = "ZCTA5", right_on = "ZIP_CD", how = "inner")
+Texas_hospitals = pd.merge(Tex_shape, CMS_by_zip, left_on = "ZCTA5", right_on = "ZIP_CD", how = "left")
 
+#fill NA values in ZIP_CD and PRVDR_NUM with 0 
+Texas_hospitals["ZIP_CD"] = Texas_hospitals["ZIP_CD"].fillna(0)
 
+Texas_hospitals["PRVDR_NUM"] = Texas_hospitals["PRVDR_NUM"].fillna(0)
+
+#make choropleth
+Texas_hospitals.plot(column = "PRVDR_NUM", legend = True)
 ```
 
 Attribution: https://www.statology.org/pandas-merge-on-different-column-names/
