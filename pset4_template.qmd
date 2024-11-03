@@ -534,7 +534,9 @@ zips_all_centroids. What are the dimensions of the resulting GeoDataFrame and wh
 The dimensions of the dataframe are 33120,6. And the columns are printed. For the columns, GEO_ID is the unqiue identifier for a geographic area and serves as the primary key for joining with other datasets. ZCTAS is the Zip Code Tabulation Area, NAME is the name typically associated with the zip. LSAD stands for Legal/Statistical Area Description which indicates the type of area the zip represents (so incorported, unincorporated, etc). CENSUSAREA represents the area size of the zip code region, usually measured in miles or kilometers and provides informations about the geographic extent of the area. The geometry column contains the geometric representation of the zip code area, holding the acutal shape and boundaries of the zip as a geometric object.
 
 ```{python}
-zips_all_centroids = shape_data.copy()
+zips_all = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
+
+zips_all_centroids = zips_all.copy()
 zips_all_centroids['geometry'] = zips_all_centroids.geometry.centroid
 
 print(zips_all_centroids.shape)
@@ -547,7 +549,8 @@ create all zip codes in Texas: zips_texas_centroids. Then, create all zip codes 
 There are 402 uniqie zip codes in Texas and 1314 unique zip codes in it's bordering states.
 
 ```{python}
-zips_texas_centroids = shape_data[shape_data['ZCTA5'].str.startswith('75')]
+zips_all_centroids = gpd.read_file('/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp')
+zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith('75')]
 
 unique_texas_zip_codes = zips_texas_centroids['ZCTA5'].nunique()
 print(f"Unique ZIP codes in Texas: {unique_texas_zip_codes}")
