@@ -587,6 +587,14 @@ nearest zip code with at least one hospital in zips_withhospital_centroids.
 
 ```{python}
 import time
+
+def calculate_nearest_hospital_distance(zips, hospitals):
+    zips = zips.to_crs(hospitals.crs)
+    distances = zips.geometry.apply(
+        lambda zip_geom: hospitals.distance(zip_geom).min()
+    )
+    return distances
+
 subset_texas_zips = zips_texas_centroids.sample(n=10, random_state=1) 
 start_time = time.time()
 subset_texas_zips['Nearest_Hospital_Distance'] = calculate_nearest_hospital_distance(subset_texas_zips, zips_withhospital_centroids)
