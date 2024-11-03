@@ -57,9 +57,9 @@ import geopandas as gpd
 
 1. 
 ```{python}
-raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
+#raw_health = r"/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine"
 
-#raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
+raw_health = r"C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine"
 path_health16 = os.path.join(raw_health, "pos2016.csv")
 health16 = pd.read_csv(path_health16) 
 
@@ -373,9 +373,9 @@ print(mergers.sort_values(by='FAC_NAME').head(10))
 Read the data into GeoDataFrame
 ```{python}
 #read the .shp file in
-#the_path = "C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
+the_path = "C:/Users/andre/Documents/GitHub/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
 
-the_path = "/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
+#the_path = "/Users/justinesilverstein/Desktop/problem-set-4-andrew-justine/gz_2010_us_860_00_500k.shp"
 
 shape_data = gpd.read_file(the_path)
 
