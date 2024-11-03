@@ -513,7 +513,6 @@ newer_col = [CMS_row["PRVDR_NUM"] for index, CMS_row in CMS_by_zip.iterrows() if
 
 Texas_hospitals = pd.merge(Tex_shape, CMS_by_zip, left_on = "ZCTA5", right_on = "ZIP_CD", how = "left")
 
-<<<<<<< HEAD
 #fill NA values in ZIP_CD and PRVDR_NUM with 0 
 Texas_hospitals["ZIP_CD"] = Texas_hospitals["ZIP_CD"].fillna(0)
 
@@ -521,8 +520,6 @@ Texas_hospitals["PRVDR_NUM"] = Texas_hospitals["PRVDR_NUM"].fillna(0)
 
 #make choropleth
 Texas_hospitals.plot(column = "PRVDR_NUM", legend = True)
-=======
->>>>>>> 6395b1f85ac17328ff6daad106ea962614e5692c
 ```
 
 Attribution: https://www.statology.org/pandas-merge-on-different-column-names/
@@ -689,8 +686,110 @@ plt.show()
 ## Effects of closures on access in Texas (15 pts)
 
 1. 
+Create df with only "cleaned" closures
+```{python}
+#merge to bring in zipcodes, but only those caught in total_closures
+new_total_closures = pd.merge(total_closures, suspected_closures, on = "FAC_NAME", how = "inner")
+
+#drop duplicates
+new_total_closures = new_total_closures.drop_duplicates(subset = "FAC_NAME")
+
+#drop "Year_y"
+new_total_closures = new_total_closures.drop(columns = "Year_y")
+
+#change Year_x to Year
+new_total_closures = new_total_closures.rename(columns = {"Year_x":"Year"})
+
+```
+
+Use groupby to create list of closures
+```{python}
+#groupby zipcode
+TX_closed = new_total_closures.groupby("ZIP_CD")["FAC_NAME"].count()
+
+#reset index
+TX_closed = TX_closed.reset_index()
+
+#to DataFrame
+TX_closed = pd.DataFrame(TX_closed)
+
+#rename FAC_NAME to Closure_Count
+TX_closed = TX_closed.rename(columns = {"FAC_NAME":"Closure_Count"})
+```
+
+Convert ZIP_CD to string
+```{python}
+#convert ZIP_CD to float
+TX_closed["ZIP_CD"] = TX_closed["ZIP_CD"].astype(float)
+#convert ZIP_CD to int
+TX_closed["ZIP_CD"] = TX_closed["ZIP_CD"].apply(np.int64)
+#convert ZIP_CD to string
+TX_closed["ZIP_CD"] = TX_closed["ZIP_CD"].astype(str)
+
+#add in_Texas column
+in_Texas(TX_closed, "ZIP_CD")
+#filter for only Texas
+TX_closed = TX_closed[TX_closed["in_Texas"] == 1]
+
+print("This table shows hospital closures in TX by zipcode")
+
+print(TX_closed)
+```
+
+
+
 2. 
+Perform a merge to create shapefile containing the closure_count data
+```{python}
+
+shape_closure = pd.merge(Tex_shape, TX_closed, left_on = "ZCTA5", right_on = "ZIP_CD", how = "left")
+
+#fill in NA values in Closure_Count with 0
+shape_closure["Closure_Count"] = shape_closure["Closure_Count"].fillna(0)
+
+#drop ZIP_CD (leaving only ZCTA5) and drop in_Texas_y
+
+shape_closure = shape_closure.drop(columns = "ZIP_CD")
+
+shape_closure = shape_closure.drop(columns = "in_Texas_y")
+
+#rename in_Texas_x to in_Texas
+
+shape_closure = shape_closure.rename(columns = {"in_Texas_x":"in_Texas"})
+
+```
+
+Plot choropleth
+```{python}
+shape_closure.plot(column = "Closure_Count", legend = True)
+
+
+#also print number of directly affected zipcodes
+len(shape_closure[shape_closure["Closure_Count"] >= 1])
+```
+
+It appears that there are 231 zipcodes in Texas that were
+directly impacted by a closure, based off of the shape file
+data we created. However, this is about 20 zipcodes lower
+than the number implied in the list of TX closures by zipcode.
+There are a number of potential reasons for this, including 
+potential error in the original data (e.g. zipcodes that 
+are not included in the .shp file) or, perhaps more likely,
+a consequence of data cleaning choices. 
+
+Attribution: I asked ChatGPT why I might have lost some values
+in using pd.merge()
 3. 
+
+```{python}
+shape_closure.centroid.buffer(1).plot(edgecolor="white").set_axis_off()
+plt.axis("off")
+plt.show()
+
+
+
+```
+
 4. 
 
 ## Reflecting on the exercise (10 pts) 
