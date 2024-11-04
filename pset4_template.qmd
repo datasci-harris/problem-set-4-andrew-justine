@@ -772,13 +772,7 @@ Attribution: I asked ChatGPT why I might have lost some values
 in using pd.merge()
 3. 
 
-```{python}
 
-#create geodataframe subsetted to directed codes
-sub_closure = shape_closure[shape_closure["Closure_Count"] >= 1]
-
-
-```
 
 4. 
 
